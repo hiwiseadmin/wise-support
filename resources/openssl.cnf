@@ -1,0 +1,10 @@
+# 最小化 OpenSSL 配置
+#
+# 用途：Windows 环境下 PHP 的 openssl 扩展在调用 openssl_pkey_new 时，
+# 会尝试加载默认 openssl.cnf；若系统未提供（XAMPP/WAMP/phpstudy 常见），
+# 会报 error:80000003:system library::No such process。
+# 在调用时显式指定本文件即可规避该问题，无需任何 CA/DN 配置，
+# 因为仅生成密钥对，不涉及证书请求。
+[req]
+distinguished_name = req_distinguished_name
+[req_distinguished_name]
