@@ -1,0 +1,60 @@
+{
+    "name": "wiseadmin/wise-support",
+    "description": "WiseAdmin 基础设施层 — ExtPoint 扩展注册中心 / Auth+JWT 统一认证 / ServiceBus 服务总线 / Connector 连接器 / CircuitBreaker 断路器 / Backoff 退避策略 / DistributedLock 分布式锁 / RateLimiter 限流 / ConfigCheck 配置检查 / Context 请求上下文 / Crypto AES-GCM / WebSocket 基础设施 / Pipeline / Exception 错误码体系",
+    "homepage": "https://github.com/hiwiseadmin/wise-support",
+    "type": "library",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "WiseAdmin Team",
+            "email": "wiseadmin@126.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "ext-openssl": "*",
+        "topthink/framework": "^8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": ">=9.0",
+        "mockery/mockery": ">=1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "wise\\support\\": "src/"
+        },
+        "files": [
+            "src/helper.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "wise\\support\\test\\": "tests/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "extra": {
+        "think": {
+            "services": [
+                "wise\\support\\SupportServiceProvider"
+            ]
+        }
+    },
+    "archive": {
+        "exclude": [
+            "/tests",
+            "/docs",
+            "/.github",
+            "/phpunit.xml",
+            "/.gitattributes",
+            "/.gitignore",
+            "/*.md",
+            "!/README.md",
+            "/qa/"
+        ]
+    }
+}
