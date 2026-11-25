@@ -1,0 +1,72 @@
+<?php
+declare(strict_types=1);
+
+namespace wise\support\rate;
+
+use think\facade\Cache;
+
+/**
+ * 原子递增计数器
+ *
+ * 提供统一的原子递增能力，三层降级策略：
+ *  1. Redis Lua INCR+EXPIRE（真原子，生产推荐）
+ *  2. ThinkPHP Cache::inc()（驱动级原子）
+ *  3. Cache::get()+set()（非原子兜底，低并发场景可接受）
+ */
+class AtomicCounter
+{
+    /**
+     * 原子递增并返回当前计数
+     *
+     * @param string $key     缓存键
+     * @param int    $expire  过期秒数
+     * @param string $context 调用方标识（用于日志追踪）
+     * @return int 递增后的值
+     */
+    public static function increment(string $key, int $expire, string $context = 'AtomicCounter'): int
+    {
+        try {
+            $handler = Cache::store('redis')->handler();
+            if ($handler instanceof \Redis) {
+                $lua = <<<'LUA'
+local v = redis.call('INCR', KEYS[1])
+if v == 1 then
+    redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return v
+LUA;
+                return (int) $handler->eval($lua, [$key, $expire], 1);
+            }
+        } catch (\Throwable $e) {
+            \think\facade\Log::warning(
+                "[{$context}] Redis atomicIncrement failed, fallback to cache: {$e->getMessage()}"
+            );
+        }
+
+        try {
+            $val = Cache::inc($key, 1);
+            if ($val === false) {
+                throw new \RuntimeException('Cache::inc() returned false');
+            }
+            $val = (int) $val;
+            if ($val === 1) {
+                $current = (int) Cache::get($key, 1);
+                Cache::set($key, max(1, $current), $expire);
+
+                if (!Cache::has($key . ':expire_set')) {
+                    Cache::set($key . ':expire_set', 1, $expire);
+                }
+            }
+            return $val;
+        } catch (\Throwable $e) {
+            \think\facade\Log::warning(
+                "[{$context}] Cache atomicIncrement failed, using non-atomic fallback: {$e->getMessage()}"
+            );
+
+            $val = Cache::get($key, 0);
+            $val = (int) $val + 1;
+            Cache::set($key, $val, $expire);
+            return $val;
+        }
+    }
+}
